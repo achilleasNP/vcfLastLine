@@ -1,0 +1,79 @@
+cabal-version: 1.12
+
+-- This file has been generated from package.yaml by hpack version 0.33.0.
+--
+-- see: https://github.com/sol/hpack
+--
+-- hash: b00cd2bcf88740edebf1d7ec382d208e26db7c67c21c240bf849e15f1add9e0d
+
+name:           vcfLastLine
+version:        0.0.1.0
+description:    Please see the README on GitHub at <https://github.com/achilleasNP/vcfLastLine#readme>
+homepage:       https://github.com/achilleasNP/vcfLastLine#readme
+bug-reports:    https://github.com/achilleasNP/vcfLastLine/issues
+author:         Achilleas Pitsillides
+maintainer:     achilleasnp@gmail.com
+copyright:      2021 Achilleas Pitsillides
+license:        BSD3
+license-file:   LICENSE
+build-type:     Simple
+extra-source-files:
+    README.md
+    ChangeLog.md
+
+source-repository head
+  type: git
+  location: https://github.com/achilleasNP/vcfLastLine
+
+library
+  exposed-modules:
+      Lib
+  other-modules:
+      Paths_vcfLastLine
+  hs-source-dirs:
+      src
+  build-depends:
+      base >=4.7 && <5
+    , binary >=0.8 && <1.0
+    , bytestring >=0.10 && <1.0
+    , directory >=1.0 && <2.0
+    , filepath >=1.0 && <2.0
+    , optparse-applicative >=0.15 && <1.0
+    , zlib >=0.5 && <1.0
+  default-language: Haskell2010
+
+executable vcfLastLine
+  main-is: Main.hs
+  other-modules:
+      Paths_vcfLastLine
+  hs-source-dirs:
+      app
+  build-depends:
+      base >=4.7 && <5
+    , binary >=0.8 && <1.0
+    , bytestring >=0.10 && <1.0
+    , directory >=1.0 && <2.0
+    , filepath >=1.0 && <2.0
+    , optparse-applicative >=0.15 && <1.0
+    , vcfLastLine
+    , zlib >=0.5 && <1.0
+  default-language: Haskell2010
+
+test-suite vcfLastLine-test
+  type: exitcode-stdio-1.0
+  main-is: Spec.hs
+  other-modules:
+      Paths_vcfLastLine
+  hs-source-dirs:
+      test
+  ghc-options: -threaded -rtsopts -with-rtsopts=-N
+  build-depends:
+      base >=4.7 && <5
+    , binary >=0.8 && <1.0
+    , bytestring >=0.10 && <1.0
+    , directory >=1.0 && <2.0
+    , filepath >=1.0 && <2.0
+    , optparse-applicative >=0.15 && <1.0
+    , vcfLastLine
+    , zlib >=0.5 && <1.0
+  default-language: Haskell2010

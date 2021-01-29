@@ -1,0 +1,51 @@
+name:                vcfLastLine
+version:             0.0.1.0
+github:              "achilleasNP/vcfLastLine"
+license:             BSD3
+author:              "Achilleas Pitsillides"
+maintainer:          "achilleasnp@gmail.com"
+copyright:           "2021 Achilleas Pitsillides"
+
+extra-source-files:
+- README.md
+- ChangeLog.md
+
+# Metadata used when publishing your package
+# synopsis:            Short description of your package
+# category:            Web
+
+# To avoid duplicated efforts in documentation and dealing with the
+# complications of embedding Haddock markup inside cabal files, it is
+# common to point users to the README.md file.
+description:         Please see the README on GitHub at <https://github.com/achilleasNP/vcfLastLine#readme>
+
+dependencies:
+- base >= 4.7 && < 5
+- bytestring >= 0.10 && < 1.0
+- binary >= 0.8 && < 1.0
+- zlib >= 0.5 && < 1.0
+- directory  >= 1.0 && < 2.0
+- filepath  >= 1.0 && < 2.0
+- optparse-applicative  >= 0.15 && < 1.0
+
+
+library:
+  source-dirs: src
+
+executables:
+  vcfLastLine:
+    main:                Main.hs
+    source-dirs:         app
+    dependencies:
+    - vcfLastLine
+
+tests:
+  vcfLastLine-test:
+    main:                Spec.hs
+    source-dirs:         test
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    dependencies:
+    - vcfLastLine
