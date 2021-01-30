@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: b00cd2bcf88740edebf1d7ec382d208e26db7c67c21c240bf849e15f1add9e0d
+-- hash: c0c88361d72030ba0f346e5a50e70521132c8fe1a448b14f7283f2b4003599c8
 
 name:           vcfLastLine
 version:        0.0.1.0
@@ -27,6 +27,8 @@ source-repository head
 
 library
   exposed-modules:
+      Internals.TabixParser
+      Internals.VirtualFileOffset
       Lib
   other-modules:
       Paths_vcfLastLine
@@ -68,11 +70,13 @@ test-suite vcfLastLine-test
       test
   ghc-options: -threaded -rtsopts -with-rtsopts=-N
   build-depends:
-      base >=4.7 && <5
+      QuickCheck
+    , base >=4.7 && <5
     , binary >=0.8 && <1.0
     , bytestring >=0.10 && <1.0
     , directory >=1.0 && <2.0
     , filepath >=1.0 && <2.0
+    , hspec
     , optparse-applicative >=0.15 && <1.0
     , vcfLastLine
     , zlib >=0.5 && <1.0

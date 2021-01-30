@@ -8,3 +8,9 @@ zcat vcfile | tail -n1
 ```
 
 This can be handy for large vcf files, when you want to know the last position in the file (only works with single sequence files).
+
+## Installation
+
+
+
+## Usage
