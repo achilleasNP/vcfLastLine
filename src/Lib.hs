@@ -17,7 +17,7 @@ import System.IO
 
 getInfoFromTabix :: FilePath -> IO VirtualFileOffset
 getInfoFromTabix tabixFilename = do
-                              contents <- dropTabixHeader . GZip.decompress <$> L8.readFile tabixFilename
+                              contents <- GZip.decompress <$> L8.readFile tabixFilename
                               return . virtualOffset $ runGet completeTabixParser contents
 
 

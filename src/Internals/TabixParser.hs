@@ -14,6 +14,7 @@ import qualified Data.Binary.Get as G
 import Data.Int
 import Data.Word
 import Data.Bits
+import Data.Char (ord)
 
 
 -- We start by dropping the fixed length part of the header
@@ -26,7 +27,21 @@ import Data.Bits
 --    col_beg: column for begining of a region  (int32 = 4 bytes)  
 --    col_end: column for end of a region  (int32 = 4 bytes)  
 --    meta: Leading character of comment lines (int32 = 4 bytes)  
---    skip: Lines to skp at begining of file (int32 = 4 bytes)  
+--    skip: Lines to skp at begining of file (int32 = 4 bytes)
+
+decodeNReferences :: G.Get Int
+decodeNReferences = do
+                      fileMagic <- mapM (const G.getWord8) [1..4]
+                      let tabixMagic = map (fromIntegral . ord ) "TBI\1"
+                      nRef <- if fileMagic == tabixMagic
+                              then G.getInt32le 
+                              else error "Not a tabix file"
+                      G.skip 24
+                      return (fromIntegral nRef)
+                         
+                    
+                    
+
 dropTabixHeader :: L8.ByteString -> L8.ByteString
 dropTabixHeader s  = case  L8.take 4 s of
                  "TBI\1" -> L8.drop 32 s 
@@ -65,8 +80,8 @@ getLastInterval = do
 
 completeTabixParser :: G.Get Word64
 completeTabixParser = do
+                           decodeNReferences
                            decodeNames
                            decodeBins
                            getLastInterval
                          
-
