@@ -1,16 +1,31 @@
 module Lib
-(runProgram)
+(runProgram,
+argsParserInfo)
 where
 import qualified Data.ByteString.Lazy.Char8 as L8
 import qualified Data.ByteString.Lazy as L
 import  Data.Binary.Get (runGet)
 import qualified Codec.Compression.GZip as GZip
+import Options.Applicative
 import Internals.VirtualFileOffset
 import Internals.TabixParser
 import System.FilePath.Posix ( (<.>) )
 import System.Directory
 import System.IO
 
+
+data Args = Args { vcfFile :: FilePath,
+                   allSequences :: Bool}
+
+args = Args <$> 
+         argument str (metavar "VCF_FILE") <*>
+         switch (long "all_sequences" <>
+                 short 'a'<>
+                 help "output lines for the last position in each sequence")
+                
+argsParserInfo = info (args <**> helper)
+                   ( fullDesc         
+                     <> progDesc "Get the last line of a  tabix indexed vcf file that contains single seqence .e.g. chr1 ") 
 
 
 
@@ -36,18 +51,22 @@ getLastLine vcfFile (seqName, voff) = do
 
 
 
-runProgram :: FilePath -> IO()
-runProgram vcfFile = do 
-                 let tabixFilename  = vcfFile <.> "tbi"
+runProgram :: Args -> IO()
+runProgram args = do 
+                 let 
+                    vcfFilename = vcfFile args
+                    tabixFilename  = vcfFilename <.> "tbi"
                  fileExists <- doesFileExist tabixFilename
                  if fileExists then
                     do
                         virtualOffsets <- getInfoFromTabix tabixFilename
-                        lastLines <-  mapM (getLastLine vcfFile) virtualOffsets
-                        L8.putStrLn . last $ lastLines
+                        lastLines <-  mapM (getLastLine vcfFilename) virtualOffsets
+                        let 
+                           outputFunction = if (allSequences args) then L8.unlines else last 
+                        L8.putStrLn . outputFunction $ lastLines
 
                  else
-                    error $ "Can't find file: " ++ vcfFile
+                    error $ "Can't find file: " ++ vcfFilename
 
 
 
