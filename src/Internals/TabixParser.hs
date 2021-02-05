@@ -2,8 +2,7 @@
 module Internals.TabixParser
 (
   completeTabixParser,
-  dropTabixHeader
-
+  readTabixFile,
 )
 
 
@@ -11,10 +10,17 @@ where
 
 import qualified Data.ByteString.Lazy.Char8 as L8
 import qualified Data.Binary.Get as G
+import qualified Codec.Compression.GZip as GZip
 import Data.Int
 import Data.Word
 import Data.Bits
-import Data.Char (ord)
+import Data.Char (ord, chr)
+
+
+readTabixFile:: FilePath -> IO L8.ByteString
+readTabixFile tabixFilename = GZip.decompress <$> L8.readFile tabixFilename
+
+
 
 
 -- We start by dropping the fixed length part of the header
@@ -49,10 +55,11 @@ dropTabixHeader s  = case  L8.take 4 s of
 
 
 
-decodeNames :: G.Get ()
+decodeNames :: G.Get [L8.ByteString]
 decodeNames =  do
                   lengthNames <- fromIntegral <$> G.getInt32le
-                  G.skip lengthNames
+                  names <- L8.split '\0' . L8.pack . init  <$> mapM (const  (chr . fromIntegral <$> G.getWord8)) [1..lengthNames] 
+                  return names
 
 
 
@@ -78,10 +85,9 @@ getLastInterval = do
                     G.getWord64le
 
 
-completeTabixParser :: G.Get Word64
+completeTabixParser :: G.Get [(L8.ByteString, Word64)]
 completeTabixParser = do
-                           decodeNReferences
-                           decodeNames
-                           decodeBins
-                           getLastInterval
-                         
+                           nRef <- decodeNReferences
+                           namesRef <- decodeNames
+                           chunkLastRefs <- mapM  (const (decodeBins >> getLastInterval))  namesRef
+                           return $ zip namesRef chunkLastRefs

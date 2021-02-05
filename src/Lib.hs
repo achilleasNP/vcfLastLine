@@ -15,21 +15,24 @@ import System.IO
 
 
 
-getInfoFromTabix :: FilePath -> IO VirtualFileOffset
+getInfoFromTabix :: FilePath -> IO [(L8.ByteString, VirtualFileOffset)]
 getInfoFromTabix tabixFilename = do
-                              contents <- GZip.decompress <$> L8.readFile tabixFilename
-                              return . virtualOffset $ runGet completeTabixParser contents
+                              contents <- readTabixFile tabixFilename
+                              let 
+                                  info = runGet completeTabixParser contents
+                                  pairs = map (\(x,y) -> (x,virtualOffset y)) info
+                              return pairs
 
 
 
-getLastLine :: FilePath -> VirtualFileOffset -> IO()
-getLastLine vcfFile voff = do
+getLastLine :: FilePath -> (L8.ByteString, VirtualFileOffset) -> IO L8.ByteString
+getLastLine vcfFile (seqName, voff) = do
                                fileExists <- doesFileExist vcfFile
                                h <- if fileExists then openFile vcfFile ReadMode
                                     else error "File does not exist"
                                hSeek h AbsoluteSeek $ compressedFileOffset voff 
                                contents <- GZip.decompress <$> L8.hGetContents h  
-                               L8.putStrLn . last . L8.lines . L8.drop  (chunkOffset voff) $ contents
+                               return . last . filter (L8.isPrefixOf seqName)  . L8.lines . L8.drop  (chunkOffset voff) $ contents
 
 
 
@@ -39,8 +42,10 @@ runProgram vcfFile = do
                  fileExists <- doesFileExist tabixFilename
                  if fileExists then
                     do
-                        virtualOffset <- getInfoFromTabix tabixFilename
-                        getLastLine vcfFile virtualOffset
+                        virtualOffsets <- getInfoFromTabix tabixFilename
+                        lastLines <-  mapM (getLastLine vcfFile) virtualOffsets
+                        L8.putStrLn . last $ lastLines
+
                  else
                     error $ "Can't find file: " ++ vcfFile
 
