@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: c0c88361d72030ba0f346e5a50e70521132c8fe1a448b14f7283f2b4003599c8
+-- hash: 153e224805255680c8db235bea573a387c7737be49fe711a195656ea5325b4f0
 
 name:           vcfLastLine
 version:        0.0.1.0
@@ -27,6 +27,7 @@ source-repository head
 
 library
   exposed-modules:
+      Internals.DecompressChunk
       Internals.TabixParser
       Internals.VirtualFileOffset
       Lib
