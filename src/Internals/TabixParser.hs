@@ -20,11 +20,9 @@ import Data.Char (ord, chr)
 readTabixFile:: FilePath -> IO L8.ByteString
 readTabixFile tabixFilename = GZip.decompress <$> L8.readFile tabixFilename
 
-
-
-
--- We start by dropping the fixed length part of the header
--- since we are interested only at the linear index.
+{-- Basic tabix parser functions. Description of the tabix file format can
+ -  be found at: https://samtools.github.io/hts-specs/tabix.pdf
+ - A  description  of the fixed header is here:
 -- The fixed header consists of:
 --    magic: 4  bytes
 --    n_ref: Number of reference sequences (int32  = 4 bytes) 
@@ -34,7 +32,10 @@ readTabixFile tabixFilename = GZip.decompress <$> L8.readFile tabixFilename
 --    col_end: column for end of a region  (int32 = 4 bytes)  
 --    meta: Leading character of comment lines (int32 = 4 bytes)  
 --    skip: Lines to skp at begining of file (int32 = 4 bytes)
+--}
 
+
+-- Parse fixed header of tabix file and get numer of sequences. 
 decodeNReferences :: G.Get Int
 decodeNReferences = do
                       fileMagic <- mapM (const G.getWord8) [1..4]
@@ -46,23 +47,16 @@ decodeNReferences = do
                       return (fromIntegral nRef)
                          
                     
-                    
-
-dropTabixHeader :: L8.ByteString -> L8.ByteString
-dropTabixHeader s  = case  L8.take 4 s of
-                 "TBI\1" -> L8.drop 32 s 
-                 _ -> error "blah"
-
-
-
-decodeNames :: G.Get [L8.ByteString]
-decodeNames =  do
+-- Parse the part of the file that contains the name of the
+-- available sequences. 
+decodeRefNames :: G.Get [L8.ByteString]
+decodeRefNames =  do
                   lengthNames <- fromIntegral <$> G.getInt32le
                   names <- L8.split '\0' . L8.pack . init  <$> mapM (const  (chr . fromIntegral <$> G.getWord8)) [1..lengthNames] 
                   return names
 
 
-
+-- Skip one bin
 decodeBin :: G.Get ()
 decodeBin  = do
                 _ <- G.getWord32le 
@@ -71,6 +65,7 @@ decodeBin  = do
                 
 
 
+-- Skip all bins
 decodeBins :: G.Get()
 decodeBins = do
                 nBins <- fromIntegral <$> G.getInt32le
@@ -78,6 +73,7 @@ decodeBins = do
 
 
 
+-- Get virtual file offset for last interval
 getLastInterval :: G.Get Word64 
 getLastInterval = do
                     nIntervals <- fromIntegral <$> G.getInt32le
@@ -85,9 +81,12 @@ getLastInterval = do
                     G.getWord64le
 
 
+
+--Combine all parsers to get pairs of available sequence names
+--and the virtual offset for the last chunk of the sequence
 completeTabixParser :: G.Get [(L8.ByteString, Word64)]
 completeTabixParser = do
                            nRef <- decodeNReferences
-                           namesRef <- decodeNames
+                           namesRef <- decodeRefNames
                            chunkLastRefs <- mapM  (const (decodeBins >> getLastInterval))  namesRef
                            return $ zip namesRef chunkLastRefs

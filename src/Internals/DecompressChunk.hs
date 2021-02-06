@@ -9,7 +9,10 @@ import qualified Data.ByteString.Lazy.Char8 as BSL
 import System.IO
 import Control.Exception
 
-
+{-- * A custom decompressor so that we decompress only one chunk at a time
+ - and not the whole file. The decompress uses the option GZ.decompressAllMembers   
+ - to force the decompression only of the current chunk.
+ --}
 myParams = GZ.defaultDecompressParams {GZ.decompressAllMembers = False}
 
 
