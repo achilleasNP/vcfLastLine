@@ -4,10 +4,10 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 153e224805255680c8db235bea573a387c7737be49fe711a195656ea5325b4f0
+-- hash: 42db7f26b12ff3de479fb77c6593627e88b0e68d3e4a1cfddcc0ada5c30e83bf
 
 name:           vcfLastLine
-version:        0.0.1.0
+version:        0.0.1.1
 description:    Please see the README on GitHub at <https://github.com/achilleasNP/vcfLastLine#readme>
 homepage:       https://github.com/achilleasNP/vcfLastLine#readme
 bug-reports:    https://github.com/achilleasNP/vcfLastLine/issues

@@ -1,6 +1,8 @@
 module Lib
-(runProgram,
-argsParserInfo)
+(
+ runProgram
+,argsParserInfo,
+)
 where
 import qualified Data.ByteString.Lazy.Char8 as L8
 import qualified Data.ByteString.Lazy as L
@@ -52,23 +54,25 @@ runProgram args = do
 
 
 --  Returns a list of pairs with the sequence names in the file and 
---  the virtual file offsets of the last chunk of the sequence
-getInfoFromTabix :: FilePath -> IO [(L8.ByteString, VirtualFileOffset)]
+--  the virtual file offsets of the start and end chunk of the sequence
+getInfoFromTabix :: FilePath -> IO [(L8.ByteString, (VirtualFileOffset,VirtualFileOffset))]
 getInfoFromTabix tabixFilename = do
                               contents <- readTabixFile tabixFilename
                               let 
                                   info = runGet completeTabixParser contents
-                                  pairs = map (\(x,y) -> (x,virtualOffset y)) info
+                                  pairs = map (\(x,(y1,y2)) -> (x,(virtualOffset y1,virtualOffset y2))) info
                               return pairs
 
 
 
 --  Obtains the last line in the virtual file offsets chunk for the given seqName. 
-getLastLine :: Handle -> (L8.ByteString, VirtualFileOffset) -> IO L8.ByteString
-getLastLine h (seqName, voff) = do
-                                  let fileOffset = compressedFileOffset voff
-                                  contents <- chunkDecompress h fileOffset
-                                  return . last . filter (L8.isPrefixOf seqName)  . L8.lines . L8.drop  (chunkOffset voff) $ contents
+getLastLine :: Handle -> (L8.ByteString, (VirtualFileOffset, VirtualFileOffset)) -> IO L8.ByteString
+getLastLine h (seqName, (vStart, vEnd)) = do
+                                  let 
+                                       fileStart = compressedFileOffset vStart
+                                       fileEnd = compressedFileOffset vEnd
+                                  contents <- smartBlockDecompress h fileStart fileEnd
+                                  return . last . filter (L8.isPrefixOf seqName)  . L8.lines . L8.drop  (chunkOffset vStart) $ contents
 
 
 

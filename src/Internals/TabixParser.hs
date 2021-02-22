@@ -35,9 +35,9 @@ readTabixFile tabixFilename = GZip.decompress <$> L8.readFile tabixFilename
 --}
 
 
--- Parse fixed header of tabix file and get numer of sequences. 
-decodeNReferences :: G.Get Int
-decodeNReferences = do
+-- |Parse fixed header of tabix file and get number of sequences. 
+decodeReferenceSequenceNumber :: G.Get Int
+decodeReferenceSequenceNumber = do
                       fileMagic <- mapM (const G.getWord8) [1..4]
                       let tabixMagic = map (fromIntegral . ord ) "TBI\1"
                       nRef <- if fileMagic == tabixMagic
@@ -47,33 +47,36 @@ decodeNReferences = do
                       return (fromIntegral nRef)
                          
                     
--- Parse the part of the file that contains the name of the
+-- |Parse the part of the file that contains the name of the
 -- available sequences. 
-decodeRefNames :: G.Get [L8.ByteString]
-decodeRefNames =  do
+decodeReferenceSequenceNames :: G.Get [L8.ByteString]
+decodeReferenceSequenceNames =  do
                   lengthNames <- fromIntegral <$> G.getInt32le
-                  names <- L8.split '\0' . L8.pack . init  <$> mapM (const  (chr . fromIntegral <$> G.getWord8)) [1..lengthNames] 
+                  names <- L8.split '\0' . L8.pack . init  <$> 
+                            mapM (const  (chr . fromIntegral <$> G.getWord8)) 
+                                 [1..lengthNames] 
                   return names
 
 
--- Skip one bin
-decodeBin :: G.Get ()
+-- |Last chunk start and end in current bin 
+decodeBin :: G.Get (Word64,Word64) 
 decodeBin  = do
                 _ <- G.getWord32le 
-                numChunks <- fromIntegral <$> G.getInt32le 
-                G.skip $ numChunks * 16 
+                numChunks <- fromIntegral <$> G.getInt32le
+                startsEndsPerChunk <-  mapM (const ( (,) <$> G.getWord64le <*> G.getWord64le )) [1..numChunks]
+                return (maximum startsEndsPerChunk)
                 
 
 
--- Skip all bins
-decodeBins :: G.Get()
+-- |Last chunk start and end over all bins
+decodeBins :: G.Get (Word64,Word64)
 decodeBins = do
                 nBins <- fromIntegral <$> G.getInt32le
-                mapM_ (const  decodeBin) [1..nBins] 
+                lastChunkStartEnd <- maximum <$> mapM (const  decodeBin) [1..nBins] 
+                return lastChunkStartEnd
 
 
-
--- Get virtual file offset for last interval
+-- |Get virtual file offset for last interval
 getLastInterval :: G.Get Word64 
 getLastInterval = do
                     nIntervals <- fromIntegral <$> G.getInt32le
@@ -82,11 +85,15 @@ getLastInterval = do
 
 
 
---Combine all parsers to get pairs of available sequence names
---and the virtual offset for the last chunk of the sequence
-completeTabixParser :: G.Get [(L8.ByteString, Word64)]
+-- |Combine all parsers to get pairs of available sequence names
+-- and the virtual offset starts and ends for the last chunk of the sequence
+completeTabixParser :: G.Get [(L8.ByteString, (Word64, Word64))]
 completeTabixParser = do
-                           nRef <- decodeNReferences
-                           namesRef <- decodeRefNames
-                           chunkLastRefs <- mapM  (const (decodeBins >> getLastInterval))  namesRef
+                           nRef <- decodeReferenceSequenceNumber
+                           namesRef <- decodeReferenceSequenceNames
+                           chunkLastRefs <- mapM  (const (decodeBins >>= (\x -> getLastInterval >> return x)))  namesRef
                            return $ zip namesRef chunkLastRefs
+
+
+
+
